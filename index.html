@@ -2,43 +2,99 @@
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <title>To'g'ri Indoor Navigatsiya</title>
+  <title>Bosqichma-bosqich Navigatsiya</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; }
-    #hint {
-      position: fixed; top: 20px; width: 100%; text-align: center;
-      color: yellow; font-weight: bold; font-size: 20px; z-index: 999;
-      text-shadow: 2px 2px 4px #000; pointer-events: none;
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    
+    /* UI KNOPKA VA YOZUVLAR */
+    #ui-container {
+      position: fixed; bottom: 30px; left: 0; width: 100%; text-align: center; z-index: 999;
     }
+    
+    #instruction {
+      background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; 
+      border-radius: 20px; display: inline-block; margin-bottom: 10px; font-size: 18px;
+    }
+
+    button {
+      background: #007bff; color: white; border: none; padding: 15px 30px;
+      font-size: 20px; border-radius: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    button:active { background: #0056b3; transform: scale(0.95); }
   </style>
 </head>
 
 <body>
 
-  <div id="hint">Orqaga (180°) buriling va yashil yo'lakdan yuring! ⬇️</div>
+  <div id="ui-container">
+    <div id="instruction">Orqaga (180°) o'giriling 🔄</div>
+    <br>
+    <button id="next-btn" onclick="nextStep()">Eshikka keldim (Keyingisi)</button>
+  </div>
 
   <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
 
     <a-entity camera look-controls position="0 1.6 0"></a-entity>
 
-    <a-cone position="0 0 0.5" rotation="90 0 0" radius-bottom="0.1" height="0.3" color="red"></a-cone> <a-cone position="0 0 1.0" rotation="90 0 0" radius-bottom="0.1" height="0.3" color="#00ff66"></a-cone>
-    <a-cone position="0 0 1.5" rotation="90 0 0" radius-bottom="0.1" height="0.3" color="#00ff66"></a-cone> <a-entity position="0 0 1.5" rotation="0 90 0">
-        <a-text value="O'ngga ->" color="yellow" align="center" position="0 1 0" scale="2 2 2" look-at="[camera]"></a-text>
+    <a-entity id="step-1">
+        <a-cone position="0 0 0.5" rotation="90 0 0" radius-bottom="0.05" height="0.2" color="red"></a-cone>
+        <a-cone position="0 0 1.0" rotation="90 0 0" radius-bottom="0.05" height="0.2" color="#00ff66"></a-cone>
+        <a-cone position="0 0 1.5" rotation="90 0 0" radius-bottom="0.05" height="0.2" color="yellow"></a-cone>
+        
+        <a-text value="Eshik shu yerda" position="0 0.5 1.5" align="center" scale="1.5 1.5 1.5" look-at="[camera]" color="yellow"></a-text>
     </a-entity>
 
-    <a-cone position="-0.5 0 1.5" rotation="90 0 90" radius-bottom="0.1" height="0.3" color="#00ff66"></a-cone>
-    <a-cone position="-1.5 0 1.5" rotation="90 0 90" radius-bottom="0.1" height="0.3" color="#00ff66"></a-cone>
-    <a-cone position="-2.5 0 1.5" rotation="90 0 90" radius-bottom="0.1" height="0.3" color="#00ff66"></a-cone>
-    
-    <a-box position="-3.0 0.5 1.5" color="blue" scale="0.5 0.5 0.5" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"></a-box>
-    <a-text value="MANZIL" position="-3.0 1.2 1.5" color="white" align="center" scale="3 3 3" look-at="[camera]"></a-text>
+    <a-entity id="step-2" visible="false">
+        
+        <a-entity position="0 0.5 1.5">
+            <a-text value="O'ngga ->" color="#00ff66" align="center" scale="2 2 2" look-at="[camera]"></a-text>
+        </a-entity>
+
+        <a-cone position="-0.5 0 1.5" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff66"></a-cone>
+        <a-cone position="-1.5 0 1.5" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff66"></a-cone>
+        <a-cone position="-2.5 0 1.5" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff66"></a-cone>
+
+        <a-box position="-3.0 0 1.5" color="blue" scale="0.3 0.3 0.3" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"></a-box>
+        <a-text value="MANZIL" position="-3.0 0.5 1.5" color="white" align="center" scale="2 2 2" look-at="[camera]"></a-text>
+    </a-entity>
 
   </a-scene>
 
-  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+  <script>
+    let currentStep = 1;
+
+    function nextStep() {
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const btn = document.getElementById('next-btn');
+      const text = document.getElementById('instruction');
+
+      if (currentStep === 1) {
+        // 1-bosqichni yashiramiz
+        step1.setAttribute('visible', 'false');
+        
+        // 2-bosqichni ko'rsatamiz
+        step2.setAttribute('visible', 'true');
+        
+        // Matnlarni o'zgartiramiz
+        text.innerText = "Endi o'ngga buriling va to'g'riga yuring";
+        btn.innerText = "Manzilga yetdim";
+        
+        currentStep = 2;
+      } else {
+        // Tugatish
+        text.innerText = "Navigatsiya yakunlandi! ✅";
+        btn.style.display = 'none'; // Tugmani yo'qotish
+        // step2 ni ham o'chirish mumkin xohlasangiz
+        // step2.setAttribute('visible', 'false'); 
+      }
+    }
+  </script>
 
 </body>
 </html>
