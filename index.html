@@ -1,43 +1,202 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Markerli AR (Stabil)</title>
+    <title>Smart Navigatsiya</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-</head>
-<body style="margin: 0; overflow: hidden;">
+    <style>
+        /* UI Dizayn - Professional ko'rinish uchun */
+        body { margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        #overlay {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none; /* Bosishni o'tkazib yuborish uchun */
+        }
 
-    <div style="position: fixed; top: 10px; width: 100%; text-align: center; z-index: 999;">
-        <h2 style="color: white; background: rgba(0,0,0,0.5); padding: 5px;">
-            Kamerani "HIRO" rasmiga qarating
-        </h2>
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 0 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: inline-block;
+            pointer-events: auto;
+            max-width: 300px;
+        }
+
+        h2 { margin: 0 0 10px 0; font-size: 18px; color: #333; }
+        p { margin: 0 0 15px 0; color: #666; font-size: 14px; }
+
+        button {
+            background: #007AFF; /* Apple Blue */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:active { background: #0056b3; }
+
+        /* Strelka konteyneri (Ekran markazida) */
+        #arrow-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Compass Calibration ogohlantirishi */
+        #calib-notice {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            display: none;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="calib-notice">Kompasni to'g'irlash uchun telefonni 8 shaklida aylantiring ♾️</div>
+
+    <video id="camera-feed" autoplay playsinline muted style="position: fixed; top: 0; left: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: 1; object-fit: cover;"></video>
+
+    <div id="arrow-container">
+        <img id="nav-arrow" src="https://upload.wikimedia.org/wikipedia/commons/7/7d/Arrow_up_font_awesome.svg" 
+             style="width: 100px; filter: drop-shadow(0px 0px 10px rgba(0,0,0,0.5)); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
     </div>
 
-    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+    <div id="overlay">
+        <div class="card">
+            <h2 id="step-title">1-Qadam</h2>
+            <p id="step-desc">Telefonni oldinga tuting va 1.5 metr yuring (Eshikkacha)</p>
+            <button onclick="nextStep()">Yetib keldim (Keyingisi)</button>
+        </div>
+    </div>
 
-        <a-marker preset="hiro">
+    <script>
+        // --- SOZLAMALAR ---
+        // Qadamlar ro'yxati (Burchaklar)
+        // angle: 0 (Shimol/To'g'ri), 90 (O'ng), -90 (Chap), 180 (Orqa)
+        const steps = [
+            { title: "1-Qadam: Start", desc: "Orqaga o'giriling va Eshikkacha boring (1.5m)", relativeAngle: 180 }, 
+            { title: "2-Qadam: Eshik", desc: "Eshikdan chiqib O'NGGA buriling va 3m yuring", relativeAngle: 90 },
+            { title: "3-Qadam: Manzil", desc: "Siz manzilga yetib keldingiz!", relativeAngle: 0, isLast: true }
+        ];
+
+        let currentStepIndex = 0;
+        let startCompassHeading = null; // Boshlang'ich kompas holati
+
+        // Kamerani yoqish
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                const video = document.getElementById('camera-feed');
+                video.srcObject = stream;
+            } catch (err) {
+                alert("Kameraga ruxsat bering!");
+            }
+        }
+
+        // Kompasni o'qish
+        function initCompass() {
+            // iOS uchun ruxsat
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(resp => { if (resp === 'granted') startOrientationListener(); })
+                    .catch(console.error);
+            } else {
+                startOrientationListener();
+            }
+        }
+
+        function startOrientationListener() {
+            window.addEventListener('deviceorientation', (event) => {
+                // alpha: 0 dan 360 gacha (Kompas)
+                // Androidda bu ba'zan 'webkitCompassHeading' bo'ladi
+                let heading = event.webkitCompassHeading || Math.abs(event.alpha - 360);
+                
+                if (startCompassHeading === null) {
+                    startCompassHeading = heading; // Birinchi kirgandagi holatni eslab qolamiz
+                }
+
+                updateArrow(heading);
+            });
+        }
+
+        function updateArrow(currentHeading) {
+            const step = steps[currentStepIndex];
+            const arrow = document.getElementById('nav-arrow');
             
-            <a-box position="0 0.5 0" material="color: red; opacity: 0.8;" scale="0.5 0.5 0.5"
-                   animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"></a-box>
+            // Bizga "Absolyut Shimol" kerak emas. Bizga "Kirishdagi holatga nisbatan" kerak.
+            // Lekin eng oddiy yo'li: 
+            // Strelka shunchaki aytilgan gradusga qarab turadi, telefon burilsa strelka teskari buriladi.
             
-            <a-entity position="0 0 1">
-                 <a-box color="yellow" scale="0.2 0.2 0.2"></a-box>
-                 <a-text value="1-qadam" align="center" position="0 0.3 0" color="black"></a-text>
-            </a-entity>
+            // Masalan: Bizga "O'ngga" (90 gradus) kerak.
+            // Agar men Shimolga (0) qarab tursam, strelka 90 ga qarashi kerak.
+            // Agar men O'ngga (90) qarab tursam, strelka 0 ga (to'g'riga) qarashi kerak (chunki men to'g'ri yo'ldaman).
+            
+            // Formula: Maqsad_Burchagi - Mening_Burchagim
+            // Bu yerda biz "relativeAngle" ni maqsad deb olamiz.
+            
+            // Mantiqni soddalashtiramiz:
+            // Strelka har doim (TargetAngle - PhoneRotation) ga qaraydi.
+            
+            // User QRni skaner qilganda "0" nuqtada turibdi deb hisoblaymiz.
+            // Hozircha oddiy simulyatsiya qilamiz:
+            
+            let rotation = step.relativeAngle; 
+            
+            // Agar haqiqiy kompas ishlatmoqchi bo'lsangiz, pastdagi qatorni yoqing:
+            // rotation = step.relativeAngle - (currentHeading - startCompassHeading);
 
-            <a-entity position="0 0 2">
-                 <a-box color="yellow" scale="0.2 0.2 0.2"></a-box>
-            </a-entity>
+            arrow.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+        }
 
-            <a-entity position="1 0 2">
-                 <a-box color="green" scale="0.3 0.3 0.3"></a-box>
-                 <a-text value="Manzil (O'ngda)" align="center" position="0 0.4 0" color="black"></a-text>
-            </a-entity>
+        function nextStep() {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                const step = steps[currentStepIndex];
+                
+                document.getElementById('step-title').innerText = step.title;
+                document.getElementById('step-desc').innerText = step.desc;
+                
+                // Animatsiya uchun strelkani biroz o'ynatamiz
+                const arrow = document.getElementById('nav-arrow');
+                arrow.style.transform = `translate(-50%, -50%) scale(1.2)`;
+                setTimeout(() => updateArrow(0), 200);
 
-        </a-marker>
+                if (step.isLast) {
+                    document.querySelector('button').style.display = 'none';
+                    document.getElementById('nav-arrow').src = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Check_mark_font_awesome.svg/512px-Check_mark_font_awesome.svg.png"; // Galochka
+                }
+            }
+        }
 
-        <a-entity camera></a-entity>
+        // Dasturni ishga tushirish
+        startCamera();
+        // 2 soniyadan keyin kompasni so'rash (User shok bo'lmasligi uchun)
+        setTimeout(initCompass, 1000);
 
-    </a-scene>
+    </script>
 </body>
 </html>
