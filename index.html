@@ -1,89 +1,113 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <title>Compact Indoor Nav</title>
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
-  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Indoor Navigatsiya (Split)</title>
 
-  <style>
-    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
     
-    #ui-container {
-      position: fixed; bottom: 40px; left: 0; width: 100%; text-align: center; z-index: 999;
-    }
-    
-    #instruction {
-      background: rgba(0,0,0,0.6); color: white; padding: 8px 15px; 
-      border-radius: 15px; display: inline-block; margin-bottom: 15px; font-size: 16px;
-    }
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Boshlang'ich Ekran */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-align: center;
+        }
 
-    button {
-      background: #28a745; color: white; border: none; padding: 12px 40px;
-      font-size: 18px; border-radius: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-  </style>
+        /* Asosiy UI */
+        #nav-ui {
+            position: fixed; bottom: 30px; left: 0; width: 100%;
+            text-align: center; z-index: 1000; display: none;
+        }
+
+        .btn {
+            background: #007AFF; color: white; border: none;
+            padding: 15px 40px; font-size: 18px; font-weight: bold;
+            border-radius: 30px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+        }
+        .btn:active { transform: scale(0.95); }
+
+        #status-box {
+            background: rgba(0,0,0,0.7); color: white; padding: 10px 20px;
+            border-radius: 20px; display: inline-block; margin-bottom: 20px;
+            font-size: 18px; font-weight: 600;
+        }
+
+        /* Kalibrovka Slayderi */
+        #calibration-ui {
+            position: fixed; top: 20px; right: 20px; z-index: 1001; display: none;
+        }
+        #calib-slider { width: 150px; cursor: pointer; }
+        #calib-label { color: white; font-size: 12px; display: block; text-align: right; text-shadow: 1px 1px 2px black;}
+    </style>
 </head>
 
 <body>
 
-  <div id="ui-container">
-    <div id="instruction">Telefonni 180° orqaga o'giring 🔄</div>
-    <br>
-    <button id="next-btn" onclick="nextStep()">Eshikka keldim</button>
-  </div>
+    <div id="start-screen">
+        <h1 style="margin-bottom: 10px;">Indoor Nav 🏢</h1>
+        <p style="color: #aaa; margin-bottom: 30px;">Telefonni yo'lakka to'g'irlang</p>
+        <button class="btn" onclick="initApp()">BOSHLASH 🚀</button>
+    </div>
 
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
+    <div id="nav-ui">
+        <div id="status-box">Yuklanmoqda...</div>
+        <br>
+        <button class="btn" id="action-btn" onclick="nextStep()">Keldim ✅</button>
+    </div>
 
-    <a-entity camera look-controls position="0 0 0"></a-entity>
+    <div id="calibration-ui">
+        <span id="calib-label">Burilishni to'g'irlash</span>
+        <input type="range" id="calib-slider" min="-180" max="180" value="0" oninput="manualCalibrate(this.value)">
+    </div>
 
-    <a-entity id="step-1">
-        
-        <a-cone position="0 -1.6 1.0" rotation="90 0 0" radius-bottom="0.03" height="0.1" color="red"></a-cone>
-        
-        <a-text value="Start" position="0 -1.4 1.0" align="center" scale="0.5 0.5 0.5" look-at="[camera]" color="white"></a-text>
+    <video id="bg-video" autoplay playsinline muted 
+           style="position: fixed; top: 0; left: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; object-fit: cover;"></video>
 
-        <a-cone position="0 -1.6 1.5" rotation="90 0 0" radius-bottom="0.03" height="0.1" color="yellow"></a-cone>
-        <a-text value="Eshik" position="0 -1.4 1.5" align="center" scale="0.5 0.5 0.5" look-at="[camera]" color="yellow"></a-text>
-    </a-entity>
+    <a-scene 
+        vr-mode-ui="enabled: false" 
+        renderer="logarithmicDepthBuffer: true;"
+        loading-screen="dotsColor: white; backgroundColor: black">
 
-    <a-entity id="step-2" visible="false">
-        
-        <a-text value="O'ngga ->" position="0 -1.4 1.5" color="#00ff66" align="center" scale="0.8 0.8 0.8" look-at="[camera]"></a-text>
+        <a-entity id="camera-rig">
+            <a-camera position="0 1.6 0" look-controls="enabled: true; touchEnabled: false;" wasd-controls="enabled: false"></a-camera>
+        </a-entity>
 
-        <a-cone position="-0.8 -1.6 1.5" rotation="90 0 90" radius-bottom="0.03" height="0.1" color="#00ff66"></a-cone>
-        <a-cone position="-1.6 -1.6 1.5" rotation="90 0 90" radius-bottom="0.03" height="0.1" color="#00ff66"></a-cone>
-        <a-cone position="-2.4 -1.6 1.5" rotation="90 0 90" radius-bottom="0.03" height="0.1" color="#00ff66"></a-cone>
+        <a-entity id="world-root">
+            
+            <a-entity id="step-1">
+                <a-circle position="0 0.1 0" rotation="-90 0 0" radius="0.4" color="red" opacity="0.5"></a-circle>
+                <a-text value="START" position="0 1 0" align="center" color="red" look-at="[camera]"></a-text>
 
-        <a-box position="-3.0 -1.6 1.5" color="blue" scale="0.2 0.2 0.2" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"></a-box>
-        <a-text value="MANZIL" position="-3.0 -1.3 1.5" color="white" align="center" scale="1 1 1" look-at="[camera]"></a-text>
-    </a-entity>
+                <a-cone position="0 0.1 0.8" rotation="90 0 0" radius-bottom="0.05" height="0.2" color="#00ff00"></a-cone>
+                <a-cone position="0 0.1 1.6" rotation="90 0 0" radius-bottom="0.05" height="0.2" color="#00ff00"></a-cone>
+                
+                <a-ring position="0 0.1 2.4" rotation="-90 0 0" radius-inner="0.3" radius-outer="0.4" color="yellow"></a-ring>
+                <a-text value="ESHIK" position="0 1 2.4" align="center" color="yellow" look-at="[camera]"></a-text>
+            </a-entity>
 
-  </a-scene>
+            <a-entity id="step-2" visible="false">
+                <a-entity position="0 1 2.4" look-at="[camera]">
+                    <a-text value="O'NGGA ->" color="#00ff00" align="center" scale="2 2 2"></a-text>
+                </a-entity>
 
-  <script>
-    let currentStep = 1;
+                <a-cone position="-0.8 0.1 2.4" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff00"></a-cone>
+                <a-cone position="-1.6 0.1 2.4" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff00"></a-cone>
+                <a-cone position="-2.4 0.1 2.4" rotation="90 0 90" radius-bottom="0.05" height="0.2" color="#00ff00"></a-cone>
 
-    function nextStep() {
-      const step1 = document.getElementById('step-1');
-      const step2 = document.getElementById('step-2');
-      const btn = document.getElementById('next-btn');
-      const text = document.getElementById('instruction');
+                <a-box position="-3.2 0.5 2.4" color="blue" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"></a-box>
+                <a-text value="MANZIL" position="-3.2 1.5 2.4" align="center" color="white" scale="2 2 2" look-at="[camera]"></a-text>
+            </a-entity>
 
-      if (currentStep === 1) {
-        step1.setAttribute('visible', 'false');
-        step2.setAttribute('visible', 'true');
-        text.innerText = "O'ngga buriling va to'g'riga yuring";
-        btn.innerText = "Yetib keldim";
-        currentStep = 2;
-      } else {
-        text.innerText = "Manzilga yetdingiz! 🏁";
-        btn.style.display = 'none';
-        // step2.setAttribute('visible', 'false'); // Xohlasangiz manzil ham o'chadi
-      }
-    }
-  </script>
+        </a-entity>
+    </a-scene>
 
+    <script src="app.js"></script>
 </body>
 </html>
