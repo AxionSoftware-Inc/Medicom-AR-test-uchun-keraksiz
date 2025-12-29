@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WebXR Auto-Place 6DoF</title>
+    <title>Fixed AR Camera</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: black; }
-        /* "Start AR" tugmasi */
         #enter-ar {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             padding: 12px 24px; border: 1px solid white; border-radius: 4px;
@@ -17,103 +16,89 @@
 </head>
 <body>
 
-<button id="enter-ar">START AR (Auto Place)</button>
+<button id="enter-ar">START AR (Fixed)</button>
 
 <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
     let camera, scene, renderer;
-    let model;
+    let mesh;
 
-    // 1. SAHNA SOZLAMALARI
     function init() {
         const container = document.createElement('div');
         document.body.appendChild(container);
 
         scene = new THREE.Scene();
+        // 🚨 1-MUHIM: Sahna foni bo'sh (null) bo'lishi SHART, aks holda qora ekran bo'ladi
+        scene.background = null; 
 
-        // 💡 MUHIM: Kamera pozitsiyasi 0,0,0 da turadi, WebXR buni o'zi boshqaradi.
         camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-        // 💡 MUHIM: Yorug'lik (Modelsiz qorong'u bo'lib qolmasligi uchun)
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3);
         light.position.set(0.5, 1, 0.25);
         scene.add(light);
 
-        // 2. RENDERER (Eng muhim joyi shu yerda)
+        // 🚨 2-MUHIM: Renderer sozlamalari
         renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
-            alpha: true // ⚠️ KAMERA KO'RINISHI UCHUN SHART (Orqa fon shaffof bo'ladi)
+            alpha: true, // Orqa fon shaffof bo'lishi uchun
+            preserveDrawingBuffer: true // Ba'zi Androidlarda kerak bo'ladi
         });
+        
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true; // WebXR ni yoqamiz
+        
+        // 🚨 3-MUHIM: Majburiy shaffoflikni o'rnatamiz
+        renderer.setClearColor(0x000000, 0); // 0 = 100% shaffof
+        
+        renderer.xr.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // 3. MODEL YUKLASH (Yoki test uchun kub)
-        // Hozircha test uchun Yashil Kub yaratamiz. 
-        // Agar o'z modeling bo'lsa, pastdagi "loadModel" funksiyasini ishlatasan.
-        createTestObject(); 
-        // loadRealModel('model.glb'); // <-- O'z modeling bo'lsa buni ochib qo'y
-
-        // Tugma bosilganda
-        document.getElementById('enter-ar').addEventListener('click', startARSesseion);
-    }
-
-    // TEST UCHUN OBYEKT (Yashil Kub)
-    function createTestObject() {
-        const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5); // 50sm kub
+        // TEST MODEL (Yashil Kub)
+        const geometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
         const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-        model = new THREE.Mesh(geometry, material);
-
-        // 📍 JOYLASHTIRISH:
-        // x = 0 (o'rta)
-        // y = 0 (ko'z balandligi darajasida, biroz pastroq bo'lishi mumkin)
-        // z = -2 (bizdan 2 metr oldinda)
-        model.position.set(0, 0, -2); 
+        mesh = new THREE.Mesh(geometry, material);
         
-        scene.add(model);
+        // 2 metr oldinda
+        mesh.position.set(0, 0, -2);
+        scene.add(mesh);
+
+        document.getElementById('enter-ar').addEventListener('click', startAR);
     }
 
-    // HAQIQIY MODEL YUKLASH UCHUN FUNKSIYA
-    function loadRealModel(url) {
-        const loader = new GLTFLoader();
-        loader.load(url, (gltf) => {
-            model = gltf.scene;
-            // O'lchamini to'g'irlash (masalan 0.5 marta kichraytirish)
-            model.scale.set(0.5, 0.5, 0.5); 
-            // Bizdan 2 metr oldinga qo'yish
-            model.position.set(0, -0.5, -2); 
-            scene.add(model);
-        });
-    }
-
-    // 4. WEBXR SESSIYANI BOSHLASH
-    async function startARSesseion() {
+    async function startAR() {
         if (!navigator.xr) {
-            alert("WebXR qo'llab quvvatlanmaydi");
+            alert("WebXR topilmadi (HTTPS va Chrome kerak)");
             return;
         }
 
-        const session = await navigator.xr.requestSession('immersive-ar', {
-            requiredFeatures: ['local'] // 'local' = 6DoF tracking
-        });
+        try {
+            const session = await navigator.xr.requestSession('immersive-ar', {
+                requiredFeatures: ['local'],
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.body } // UI ko'rinib turishi uchun
+            });
 
-        renderer.xr.setReferenceSpaceType('local');
-        renderer.xr.setSession(session);
+            renderer.xr.setReferenceSpaceType('local');
+            renderer.xr.setSession(session);
 
-        document.getElementById('enter-ar').style.display = 'none'; // Tugmani yashirish
-        
-        // Render loop
-        renderer.setAnimationLoop(render);
+            document.getElementById('enter-ar').style.display = 'none';
+            
+            renderer.setAnimationLoop(render);
+        } catch (e) {
+            alert("Sessiya ochilmadi: " + e.message);
+        }
     }
 
     function render() {
+        // Kubni aylantirib turamiz (ishlayotganini bilish uchun)
+        if(mesh) {
+            mesh.rotation.x += 0.01;
+            mesh.rotation.y += 0.01;
+        }
         renderer.render(scene, camera);
     }
 
-    // Oyna o'lchami o'zgarsa
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
