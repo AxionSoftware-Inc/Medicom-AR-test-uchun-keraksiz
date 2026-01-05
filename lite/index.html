@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,60 +8,117 @@
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
-        
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            background: #000;
+        }
+
         /* 1. VIDEO FON (Eng orqada) */
         #bg-video {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; z-index: -2;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
         }
 
         /* 2. UI QATLAMI */
         #ui-container {
-            position: fixed; inset: 0; z-index: 999;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
         }
-        #ui-container > * { pointer-events: auto; }
+
+        #ui-container>* {
+            pointer-events: auto;
+        }
 
         /* Start Ekrani */
         #start-screen {
-            background: rgba(20, 20, 30, 0.9); backdrop-filter: blur(10px);
-            padding: 30px; border-radius: 20px; text-align: center; color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2); width: 85%; max-width: 400px;
+            background: rgba(20, 20, 30, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 85%;
+            max-width: 400px;
         }
+
         .btn-start {
-            background: #00d2ff; border: none; padding: 15px 40px;
-            font-size: 1.1rem; font-weight: bold; border-radius: 50px;
-            margin-top: 20px; cursor: pointer; width: 100%; color: #000;
+            background: #00d2ff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            margin-top: 20px;
+            cursor: pointer;
+            width: 100%;
+            color: #000;
         }
 
         /* Xonalar Ro'yxati */
         #room-list-container {
-            display: none; width: 90%; max-height: 60vh; overflow-y: auto;
-            background: rgba(10, 20, 30, 0.9); backdrop-filter: blur(10px);
-            border-radius: 15px; padding: 15px;
+            display: none;
+            width: 90%;
+            max-height: 60vh;
+            overflow-y: auto;
+            background: rgba(10, 20, 30, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
         }
+
         .room-item {
-            background: rgba(255, 255, 255, 0.1); padding: 15px;
-            margin-bottom: 10px; border-radius: 10px; color: white;
-            cursor: pointer; border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            border: 1px solid transparent;
         }
-        .room-item:active { background: #00d2ff; color: #000; }
+
+        .room-item:active {
+            background: #00d2ff;
+            color: #000;
+        }
 
         /* Menyuga qaytish tugmasi */
         #btn-reset {
-            display: none; position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%); background: #ff4444; color: white;
-            padding: 10px 25px; border: none; border-radius: 25px;
-            font-weight: bold; z-index: 1000;
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4444;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            z-index: 1000;
         }
 
         /* A-Scene shaffof bo'lishi shart! */
         a-scene {
-            display: block; position: relative; height: 100vh; width: 100%;
-            z-index: 1; background: transparent !important;
+            display: block;
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            z-index: 1;
+            background: transparent !important;
         }
     </style>
 </head>
@@ -86,21 +144,20 @@
         </div>
     </div>
 
-    <div id="nav-hint-box" style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:10px 20px; border-radius:15px; text-align:center; color:white; border:1px solid rgba(255,255,255,0.2); z-index:1000;">
+    <div id="nav-hint-box"
+        style="display:none; position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:10px 20px; border-radius:15px; text-align:center; color:white; border:1px solid rgba(255,255,255,0.2); z-index:1000;">
         <span id="nav-hint-text" style="font-weight:bold; font-size:1.1rem; color:#ffd700"></span>
     </div>
 
     <button id="btn-reset" onclick="resetApp()">Menyuga qaytish</button>
 
-    <a-scene 
-        vr-mode-ui="enabled: false" 
-        device-orientation-permission-ui="enabled: false"
-        renderer="alpha: true; antialias: true; colorManagement: true;"
-        style="background: transparent;">
-        
-        <a-camera id="cam" position="0 1.6 0" look-controls="enabled: true; touchEnabled: false; mouseEnabled: false;"></a-camera>
+    <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
+        renderer="alpha: true; antialias: true; colorManagement: true;" style="background: transparent;">
+
+        <a-camera id="cam" position="0 1.6 0"
+            look-controls="enabled: true; touchEnabled: false; mouseEnabled: false;"></a-camera>
         <a-entity id="world-root" position="0 0 0"></a-entity>
-        
+
     </a-scene>
 
     <script>
@@ -136,11 +193,11 @@
             rooms.forEach(room => {
                 const div = document.createElement('div');
                 div.className = 'room-item';
-                
+
                 // Eski va yangi json formatini qo'llab-quvvatlash
                 const isLeft = (room.corridor === 'left' || room.corridorDir === 'left');
                 const dirText = isLeft ? "Chap yo'lak" : "O'ng yo'lak";
-                
+
                 div.innerHTML = `<b>Xona ${room.id}</b><br><small>${dirText}, ${room.x}m</small>`;
                 div.onclick = () => startNavigation(room);
                 roomList.appendChild(div);
@@ -193,33 +250,34 @@
             // Biz user QR kodga qarab turibdi deb hisoblaymiz.
             // Demak "Oldinga" bu -Z o'qi. 
             // Strelkalarni chizamiz.
-            
-            const distance = room.x; 
+
+            const distance = room.x;
 
             // A. Strelkalar (Yurish effekti bilan)
             // 3DoF bo'lgani uchun, user yursa ham strelka yaqinlashmaydi.
             // Shuning uchun strelkalarni o'zini userga qarab yurgizamiz (Infinite loop animation).
-            
+
+            // A. Strelkalar (Yurish effekti bilan) - RASMSIZ VERSIYA
             for (let i = 1.0; i < distance; i += 1.5) {
                 const arrowGroup = document.createElement('a-entity');
-                // Start pozitsiya: 0, -1(yerda), -i(uzoqda)
                 arrowGroup.setAttribute('position', `0 -0.8 -${i}`);
-                
-                // Animatsiya: Strelka o'zi foydalanuvchi tomon yuradi
-                // Bu "Men yuryapman" degan illuziyani beradi
+
+                // Animatsiya
                 arrowGroup.setAttribute('animation', `
-                    property: position; 
-                    to: 0 -0.8 -${i - 1.5}; 
-                    dur: 1500; 
-                    easing: linear; 
-                    loop: true
-                `);
+        property: position; 
+        to: 0 -0.8 -${i - 1.5}; 
+        dur: 1500; 
+        easing: linear; 
+        loop: true
+    `);
 
                 const arrow = document.createElement('a-entity');
-                arrow.setAttribute('geometry', 'primitive: plane; width: 0.4; height: 0.4');
-                // Transparent png strelka (yoki oddiy uchburchak)
-                arrow.setAttribute('material', 'src: url(https://cdn-icons-png.flaticon.com/512/109/109617.png); transparent: true; color: #00d2ff; shader: flat');
-                arrow.setAttribute('rotation', '-90 0 0'); // Yerga yotqizish
+                // Uchburchak chizamiz (Rasm kerak emas)
+                arrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0 0; vertexB: -0.2 0 0.3; vertexC: 0.2 0 0.3');
+                arrow.setAttribute('material', 'color: #00d2ff; shader: flat; transparent: true; opacity: 0.8; side: double');
+
+                // Uchburchakni to'g'ri burish (Uchi oldinga)
+                arrow.setAttribute('rotation', '-90 0 180');
 
                 arrowGroup.appendChild(arrow);
                 worldRoot.appendChild(arrowGroup);
@@ -229,15 +287,15 @@
             // Eshik chapdami yoki o'ngda?
             // User QRga qarab turibdi (-Z).
             // Chap yo'lak (-X) bo'lsa:
-                // Eshik Left -> +Z (Userning orqasi-chapi)
-                // Eshik Right -> -Z (Userning oldi-chapi) -- BU MURAKKAB
-            
+            // Eshik Left -> +Z (Userning orqasi-chapi)
+            // Eshik Right -> -Z (Userning oldi-chapi) -- BU MURAKKAB
+
             // LITE VERSIYA UCHUN ODDİY YECHİM:
             // Biz shunchaki masofa tugaganda katta belgi qo'yamiz.
             // Eshik tomonini ko'rsatish uchun belgi biroz o'ng yoki chapga suriladi.
-            
+
             const doorSide = (room.door === 'left' || room.side === 'left') ? -1.5 : 1.5;
-            
+
             const pin = document.createElement('a-entity');
             pin.setAttribute('position', `${doorSide} -0.5 -${distance}`);
 
@@ -249,7 +307,7 @@
             cone.setAttribute('position', '0 1 0');
             // Tepaga pastga sakrash
             cone.setAttribute('animation', 'property: position; from: 0 1 0; to: 0 1.2 0; dir: alternate; loop: true; dur: 800');
-            
+
             pin.appendChild(cone);
 
             // Manzil yozuvi
@@ -259,7 +317,7 @@
             text.setAttribute('scale', '4 4 4');
             text.setAttribute('position', `0 2 0`);
             text.setAttribute('color', '#fff');
-            
+
             pin.appendChild(text);
             worldRoot.appendChild(pin);
         }
@@ -273,4 +331,5 @@
         }
     </script>
 </body>
+
 </html>
