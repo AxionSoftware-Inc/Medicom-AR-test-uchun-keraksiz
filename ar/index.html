@@ -277,19 +277,25 @@
             const dirX = isLeft ? -1 : 1;
 
             // 1. START BELGISI (Kamera ro'parasida)
+            // Konteyner yaratamiz: X bo'yicha 90 aylantirib, yuzini userga qaratamiz
+            const startGroup = document.createElement('a-entity');
+            startGroup.setAttribute('position', '0 1.5 -1');
+            startGroup.setAttribute('rotation', '90 0 0');
+
             const startArrow = document.createElement('a-entity');
             startArrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0 0; vertexB: -0.3 0 0.5; vertexC: 0.3 0 0.5');
             startArrow.setAttribute('material', 'color: #00ff00; shader: flat; transparent: true; opacity: 0.9; side: double');
 
-            // X bo'yicha 90 gradus, Z bo'yicha 1m oldinda (kameradan)
-            // Kamera o'rtacha 1.5m balandlikda deb olamiz va -1m masofaga qo'yamiz
+            // Ichki Y aylantirish orqali yo'nalish beramiz
+            // Agar corridor 'left' bo'lsa 90 (Chapga), 'right' bo'lsa -90 (O'ngga)
             const startRot = isLeft ? 90 : -90;
-            startArrow.setAttribute('rotation', `90 ${startRot} 0`);
-            startArrow.setAttribute('position', '0 1.5 -1');
+            startArrow.setAttribute('rotation', `0 ${startRot} 0`);
 
             // Animatsiya
             startArrow.setAttribute('animation', 'property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dir: alternate; loop: true; dur: 800');
-            arWorld.appendChild(startArrow);
+
+            startGroup.appendChild(startArrow);
+            arWorld.appendChild(startGroup);
 
             // 2. YO'LAK (Ko'k Uchburchaklar)
             // Startdan biroz orqadan (-1m) boshlab chizamiz
