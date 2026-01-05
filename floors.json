@@ -127,6 +127,62 @@
       "corridorDir": "right"
     },
     { 
+      "id": "119", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
+      "id": "120", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
+      "id": "121", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
+      "id": "122", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
+      "id": "123", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
+      "id": "124", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+     { 
+      "id": "125", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+     { 
+      "id": "126", 
+      "x": 20, 
+      "side": "left", 
+      "width": 1.8,  
+      "corridorDir": "left"
+    },
+    { 
       "id": "Xojatxona", 
       "x": 17, 
       "side": "right", 
