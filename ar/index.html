@@ -271,103 +271,85 @@
         }
 
         // --- YANGILANGAN CHIZMA (Uchburchaklar va To'g'ri Finish) ---
-        // --- VIZUALIZATSIYA (Tikka turadigan belgilar bilan) ---
-        function drawPath(room) {
+        function drawProPath(room) {
             const dist = room.x;
             const isLeft = (room.corridor === 'left' || room.corridorDir === 'left');
-            const dirX = isLeft ? -1 : 1; // Chap=-1, O'ng=1
+            const dirX = isLeft ? -1 : 1;
 
-            // 1. START BELGISI (Havoda, Tikka, Ko'z oldida)
+            // 1. START BELGISI (Kamera ro'parasida)
             const startArrow = document.createElement('a-entity');
+            startArrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0 0; vertexB: -0.3 0 0.5; vertexC: 0.3 0 0.5');
+            startArrow.setAttribute('material', 'color: #00ff00; shader: flat; transparent: true; opacity: 0.9; side: double');
 
-            // Uchburchak (Tikka turadi)
-            // VertexA (Uchi) default tepaga qaraydi. Biz uni Yonga buramiz.
-            startArrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0.5 0; vertexB: -0.5 -0.5 0; vertexC: 0.5 -0.5 0');
-            startArrow.setAttribute('material', 'color: #00ff00; shader: flat; side: double; transparent: true; opacity: 0.9');
+            // X bo'yicha 90 gradus, Z bo'yicha 1m oldinda (kameradan)
+            // Kamera o'rtacha 1.5m balandlikda deb olamiz va -1m masofaga qo'yamiz
+            const startRot = isLeft ? 90 : -90;
+            startArrow.setAttribute('rotation', `90 ${startRot} 0`);
+            startArrow.setAttribute('position', '0 1.5 -1');
 
-            // JOYLASHTIRISH:
-            // QR kodning (0,0,0) sal oldiga (-0.5) va ko'z hizosiga (1.4) qo'yamiz
-            startArrow.setAttribute('position', '0 1.4 -0.5');
-
-            // BURISH (Yo'nalishga qarab):
-            // Triangle uchi (VertexA) tepaga qarab turibdi.
-            // Chapga (-X) qarash uchun -> Z o'qi bo'yicha 90 gradus.
-            // O'ngga (+X) qarash uchun -> Z o'qi bo'yicha -90 gradus.
-            const startZRot = isLeft ? 90 : -90;
-            startArrow.setAttribute('rotation', `0 0 ${startZRot}`);
-
-            // Animatsiya (Kattalashib-kichrayish)
-            startArrow.setAttribute('animation', 'property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 800');
-
+            // Animatsiya
+            startArrow.setAttribute('animation', 'property: scale; from: 1 1 1; to: 1.3 1.3 1.3; dir: alternate; loop: true; dur: 800');
             arWorld.appendChild(startArrow);
 
-            // 2. YO'LAK (Yerdagi Ko'k Uchburchaklar - Bular yotiq qolaveradi, yo'l ko'rsatish uchun)
-            // Startdan biroz orqadan (-1m) boshlaymiz
-            for (let i = -1.0; i < dist; i += 1.5) {
-                if (Math.abs(i) < 0.5) continue; // Startni bo'sh qoldiramiz
+            // 2. YO'LAK (Ko'k Uchburchaklar)
+            // Startdan biroz orqadan (-1m) boshlab chizamiz
+            for (let i = -1.0; i < dist; i += 1.2) {
+                // Start joyini (0.0) bo'sh qoldiramiz, chunki u yerda startArrow bor
+                if (Math.abs(i) < 0.5) continue;
 
                 const tri = document.createElement('a-entity');
                 tri.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0 0; vertexB: -0.25 0 0.4; vertexC: 0.25 0 0.4');
                 tri.setAttribute('material', 'color: #00d2ff; shader: flat; transparent: true; opacity: 0.8; side: double');
 
-                tri.setAttribute('position', `${i * dirX} 0.05 0`);
-                // Bular yerda yotgani ma'qul, yo'lni to'sib qo'ymasligi uchun
+                tri.setAttribute('position', `${i * dirX} 0.05 0`); // X o'qi bo'ylab, Z=0 (Markaz)
+
+                // Burilish: Yo'lak bo'ylab
                 tri.setAttribute('rotation', `0 ${isLeft ? 90 : -90} 0`);
 
                 arWorld.appendChild(tri);
             }
 
-            // 3. FINISH (Eshik ko'rsatkichi - OQ va TIKKA)
+            // 3. FINISH (Eshikka qaragan Strelka)
             const destGroup = document.createElement('a-entity');
-            // Eshik oldiga, balandlikka (1.5m) qo'yamiz
-            destGroup.setAttribute('position', `${dist * dirX} 1.5 0`);
+            destGroup.setAttribute('position', `${dist * dirX} 0.1 0`);
 
             const finishArrow = document.createElement('a-entity');
-            // Katta Tikka Uchburchak
-            finishArrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0.6 0; vertexB: -0.5 -0.6 0; vertexC: 0.5 -0.6 0');
-            // RANGLI OQ (#FFFFFF)
-            finishArrow.setAttribute('material', 'color: #ffffff; shader: flat; side: double; emissive: #ffffff; emissiveIntensity: 0.5');
+            // Katta uchburchak
+            finishArrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0 -0.8; vertexB: -0.4 0 0.4; vertexC: 0.4 0 0.4');
+            finishArrow.setAttribute('material', 'color: #ffffff; shader: flat; side: double');
 
-            // BURISH LOGIKASI:
-            // Strelka hozir "Tepa"ga qarab turibdi. Biz uni Eshik tomonga "Yotqizishimiz" kerak (yonbosh qilib).
-
+            // Eshik tomonga burish
             const isDoorLeft = (room.side === 'left' || room.door === 'left');
-            let finalRotZ = 0; // Z o'qi bo'yicha aylantirish (yonboshga)
+            let finalRot = 0;
 
             if (isLeft) { // Chap koridordamiz (-X)
-                // Chap koridorda turib, eshik Chapda bo'lsa -> Orqaga (Userning chapiga) qarash kerak
-                // Lekin biz strelkani "Devorga sanchilgan" qilib ko'rsatsak chiroyli bo'ladi.
-
+                // Default triangle uchi (vertexA) -Z ga qaraydi.
                 if (isDoorLeft) {
-                    // Chapga qarash (+Z) -> Strelka uchini chapga buramiz
-                    // Lekin user koridordan kelyapti.
-                    // Eng zo'ri: Strelka TEPADAN PASTGA (Eshikka) qarab tursin.
-                    finalRotZ = 180; // Uchi pastga qaraydi
+                    // Eshik chapda (+Z). Strelka orqaga burilishi kerak -> 180
+                    finalRot = 180;
                 } else {
-                    finalRotZ = 180; // Uchi pastga qaraydi
+                    // Eshik o'ngda (-Z). Strelka to'g'ri -> 0
+                    finalRot = 0;
                 }
-            } else {
-                finalRotZ = 180; // O'ng koridorda ham pastga qarasin
+            } else { // O'ng koridordamiz (+X)
+                if (isDoorLeft) {
+                    // Eshik chapda (-Z). Strelka to'g'ri -> 0
+                    finalRot = 0;
+                } else {
+                    // Eshik o'ngda (+Z). Strelka orqaga -> 180
+                    finalRot = 180;
+                }
             }
 
-            // Hozir hammasini "Pastga" qaratdik (Eshikni ko'rsatib turadi).
-            // Agar "Eshik ichkarisiga" qaratmoqchi bo'lsangiz, Y o'qini burish kerak.
-
-            // Keling, OQ strelkani TEPADAN PASTGA sakraydigan qilamiz (Eshik shu yerda degan ma'noda).
-            // Bu tikka turishdan ham ko'ra aniqroq.
-
-            finishArrow.setAttribute('rotation', `0 0 180`); // Uchi pastga
-
-            // Sakrash animatsiyasi
-            finishArrow.setAttribute('animation', 'property: position; from: 0 0.5 0; to: 0 0.2 0; dir: alternate; loop: true; dur: 700');
+            finishArrow.setAttribute('rotation', `0 ${finalRot} 90`);
+            finishArrow.setAttribute('animation', 'property: position; from: 0 0.1 0; to: 0 0.4 0; dir: alternate; loop: true; dur: 700');
 
             // Xona raqami
             const text = document.createElement('a-text');
             text.setAttribute('value', room.id);
             text.setAttribute('align', 'center');
-            text.setAttribute('scale', '6 6 6'); // Kattaroq
-            text.setAttribute('position', '0 1.2 0'); // Strelka tepasida
-            text.setAttribute('color', 'white');
+            text.setAttribute('scale', '5 5 5');
+            text.setAttribute('position', '0 1.5 0');
             // Matnni userga qaratish
             text.setAttribute('rotation', `0 ${isLeft ? 90 : -90} 0`);
 
