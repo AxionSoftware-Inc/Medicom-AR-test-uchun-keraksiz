@@ -221,8 +221,7 @@
 
         floorTitle.innerText = `${currentFloor}-qavat ma'lumotlari...`;
 
-        // 1. JSON YUKLASH
-        // 1. JSON YUKLASH
+        // 1. JSON YUKLASH VA PARSING (Yangilangan)
         fetch('../floors.json')
             .then(res => res.json())
             .then(data => {
@@ -232,17 +231,19 @@
                     rooms.forEach(room => {
                         const div = document.createElement('div');
                         div.className = 'room-item';
-                        // Icon based on corridor direction
-                        const directionIcon = room.corridor === 'left' ? '⬅️' : '➡️';
-                        const directionText = room.corridor === 'left' ? 'Chap yo\'lak' : 'O\'ng yo\'lak';
+
+                        // Eski json bilan ham, yangi bilan ham ishlash uchun adapter
+                        const isLeftCorridor = (room.corridor === 'left' || room.corridorDir === 'left');
+                        const directionIcon = isLeftCorridor ? '⬅️' : '➡️';
+                        const directionText = isLeftCorridor ? 'Chap yo\'lak' : 'O\'ng yo\'lak';
 
                         div.innerHTML = `
-                            <div style="text-align:left">
-                                <div style="font-weight:600; font-size:1.1rem">Xona ${room.id}</div>
-                                <div style="font-size:0.8rem; color:#ccc; margin-top:4px">${directionText}, ${room.x}m</div>
-                            </div>
-                            <div style="font-size:1.4rem">${directionIcon}</div>
-                        `;
+                    <div style="text-align:left">
+                        <div style="font-weight:600; font-size:1.1rem">Xona ${room.id}</div>
+                        <div style="font-size:0.8rem; color:#ccc; margin-top:4px">${directionText}, ${room.x}m</div>
+                    </div>
+                    <div style="font-size:1.4rem">${directionIcon}</div>
+                `;
                         div.onclick = (e) => {
                             e.stopPropagation();
                             startNavigation(room);
@@ -255,7 +256,7 @@
             })
             .catch(err => {
                 console.error(err);
-                floorTitle.innerText = "Internet xatosi yoki fayl topilmadi!";
+                floorTitle.innerText = "Xatolik: JSON o'qilmadi";
             });
 
         // 2. AR BOSHLASH
@@ -266,7 +267,7 @@
                 startScreen.style.display = 'none';
                 roomList.style.display = 'block';
             } catch (e) {
-                alert("Xatolik: " + e.message);
+                alert("AR Xatolik: " + e.message);
             }
         };
 
@@ -275,152 +276,155 @@
             targetData = room;
             isNavigating = true;
 
-            // UI almashinuvi
+            // UI
             roomList.style.display = 'none';
             hud.style.display = 'block';
             navHintBox.style.display = 'block';
-            btnClose.style.display = 'flex'; // X tugmasi chiqadi
+            btnClose.style.display = 'flex';
 
-            // Hint yozuvi
-            const turnText = room.corridor === 'left' ? "CHAPGA BURILING" : "O'NGGA BURILING";
+            const isLeftCorridor = (room.corridor === 'left' || room.corridorDir === 'left');
+            const turnText = isLeftCorridor ? "CHAPGA BURILING" : "O'NGGA BURILING";
             navHintText.innerText = turnText;
             navHintText.style.color = "#ffd700";
 
             arWorld.innerHTML = '';
-            drawCorridorPath(room);
+            drawSmartPath(room); // Yangi funksiya
         }
 
-        // 4. CHIZMALAR (Start Arrow, Path, Destination)
-        // --- YANGILANGAN FUNCTION: drawCorridorPath ---
-        function drawCorridorPath(room) {
+        // 4. YANGILANGAN CHIZMA LOGIKASI (Smart Path)
+        function drawSmartPath(room) {
             const dist = room.x;
 
-            // 1. KORIDOR LOGIKASI (Start)
-            const isLeftCorridor = room.corridor === 'left';
-            const corridorDir = isLeftCorridor ? -1 : 1; // Chap=-1, O'ng=1
+            // Parametrlarni aniqlash
+            const isLeftCorridor = (room.corridor === 'left' || room.corridorDir === 'left');
+            const corridorDir = isLeftCorridor ? -1 : 1;
 
-            // 2. ESHIK LOGIKASI (Finish)
-            // Agar men Chap yo'lakka qarab ketyapman (-X).
-            // Mening "O'ng" qo'lim bu Startga nisbatan Old taraf (+Z).
-            // Mening "Chap" qo'lim bu Startga nisbatan Orqa taraf (-Z).
+            // Eshik joylashuvi (Logic update)
+            // Agar "width" bo'lmasa, default 1.5m olamiz
+            const halfWidth = room.width || 1.5;
 
-            // Agar men O'ng yo'lakka qarab ketyapman (+X).
-            // Mening "O'ng" qo'lim bu Startga nisbatan Orqa taraf (-Z).
-            // Mening "Chap" qo'lim bu Startga nisbatan Old taraf (+Z).
-
+            // Eshik qaysi tomonda? (Startga nisbatan)
+            // Left Corridor (-X): Door Right -> -Z, Door Left -> +Z
+            // Right Corridor (+X): Door Right -> +Z, Door Left -> -Z
             let doorZ = 0;
+            const doorSide = room.door || room.side; // Eski va yangi json support
+
             if (isLeftCorridor) {
-                // Chap koridorda (-X ga yuryapmiz)
-                // Right -> -Z, Left -> +Z
-                doorZ = room.door === 'left' ? 1.5 : -1.5;
+                doorZ = (doorSide === 'left') ? halfWidth : -halfWidth;
             } else {
-                // O'ng koridorda (+X ga yuryapmiz)
-                // Right -> +Z, Left -> -Z
-                doorZ = room.door === 'left' ? -1.5 : 1.5;
+                doorZ = (doorSide === 'left') ? -halfWidth : halfWidth;
             }
 
-            // A. START ARROW (Sariq, Koridorga qarab)
+            // A. START ARROW
             const startArrow = document.createElement('a-entity');
-            const tipX = isLeftCorridor ? -0.8 : 0.8; // Uchi qaysi tomonga
-
-            startArrow.setAttribute('geometry', `primitive: triangle; vertexA: 0 0.5 0; vertexB: ${tipX} 0 0; vertexC: 0 -0.5 0`);
-            startArrow.setAttribute('material', 'color: #ffd700; shader: flat; side: double; transparent: true; opacity: 0.9');
-            startArrow.setAttribute('position', '0 1.6 -1.5');
-            startArrow.setAttribute('animation', 'property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 800');
-
-            setTimeout(() => { if (startArrow.parentNode) startArrow.parentNode.removeChild(startArrow); }, 5000);
+            startArrow.setAttribute('geometry', 'primitive: plane; width: 0.5; height: 0.5');
+            startArrow.setAttribute('material', `src: url(https://cdn-icons-png.flaticon.com/512/109/109617.png); transparent: true; color: #ffd700`);
+            startArrow.setAttribute('position', '0 1.4 -1');
+            startArrow.setAttribute('rotation', '-45 0 0'); // Yerdan sal ko'tarilib turadi
             arWorld.appendChild(startArrow);
 
-            // B. YERDAGI YO'L (Moviy strelkalar - X o'qi bo'ylab)
-            for (let i = 1.0; i < dist; i += 1.5) {
-                const arrow = document.createElement('a-entity');
-                arrow.setAttribute('geometry', 'primitive: triangle; vertexA: 0 0.15 0; vertexB: -0.15 -0.15 0; vertexC: 0.15 -0.15 0');
-                arrow.setAttribute('material', 'color: #00d2ff; shader: flat; side: double; transparent: true; opacity: 0.8');
+            // B. YOL CHIZIQLARI (Poligonlar - Arrowlarga qaraganda optimalroq)
+            const pathEntity = document.createElement('a-entity');
 
-                arrow.setAttribute('position', `${i * corridorDir} 0.05 0`);
+            for (let i = 1.0; i < dist; i += 1.0) {
+                const dot = document.createElement('a-circle');
+                dot.setAttribute('radius', '0.15');
+                dot.setAttribute('color', '#00d2ff');
+                dot.setAttribute('rotation', '-90 0 0');
+                dot.setAttribute('opacity', '0.6');
+                dot.setAttribute('position', `${i * corridorDir} 0.02 0`);
 
-                // Strelka uchi koridor yo'nalishiga qarasin
-                const zRot = isLeftCorridor ? 90 : -90;
-                arrow.setAttribute('rotation', `-90 0 ${zRot}`);
+                // Animatsiya: Oldinga yurish effekti
+                dot.setAttribute('animation', `property: scale; from: 0.8 0.8 0.8; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 1000; delay: ${i * 100}`);
 
-                arrow.setAttribute('animation', `property: position; to: ${(i * corridorDir) + (0.4 * corridorDir)} 0.05 0; dir: alternate; loop: true; dur: 1000`);
-                arWorld.appendChild(arrow);
+                pathEntity.appendChild(dot);
             }
+            arWorld.appendChild(pathEntity);
 
-            // C. MANZIL (Oq Strelka - Z o'qiga surilgan)
+            // C. MANZIL (3D Pointer)
             const destGroup = document.createElement('a-entity');
-            // X = yetib borilgan joy, Z = eshik joylashgan devor
             destGroup.setAttribute('position', `${dist * corridorDir} 1.5 ${doorZ}`);
 
-            // Oq strelka pastga qaragan
-            const downArrow = document.createElement('a-entity');
-            downArrow.setAttribute('geometry', 'primitive: cone; radiusTop: 0.25; radiusBottom: 0; height: 0.6; segmentsRadial: 10');
-            downArrow.setAttribute('material', 'color: white; emissive: #fff; emissiveIntensity: 0.5');
-            downArrow.setAttribute('position', '0 0.5 0');
-            downArrow.setAttribute('animation', 'property: position; from: 0 0.5 0; to: 0 0.2 0; dir: alternate; loop: true; dur: 800; easing: easeInOutQuad');
+            // Pointer
+            const cone = document.createElement('a-cone');
+            cone.setAttribute('color', '#00ff00');
+            cone.setAttribute('radius-bottom', '0');
+            cone.setAttribute('radius-top', '0.2');
+            cone.setAttribute('height', '0.5');
+            cone.setAttribute('position', '0 0.5 0');
+            cone.setAttribute('animation', 'property: position; from: 0 0.5 0; to: 0 0.3 0; dir: alternate; loop: true; dur: 800');
 
-            // Xona raqami
+            // Text
             const text = document.createElement('a-text');
-            text.setAttribute('value', room.id); // room.id = "101"
+            text.setAttribute('value', room.id);
             text.setAttribute('align', 'center');
-            text.setAttribute('scale', '3 3 3');
+            text.setAttribute('scale', '4 4 4');
             text.setAttribute('position', '0 1.2 0');
-
-            // Matnni aylantirish (Siz yo'lakdan kelganda ko'rinishi uchun)
-            // Agar eshik Z=-1.5 da bo'lsa (Userga nisbatan), matn userga qarashi kerak.
-            // Oddiy qilib 0 0 0 qoldirsak ham bo'ladi, chunki look-at ishlatmaymiz, lekin
-            // kelayotgan odamga qaratish uchun:
+            // Matnni foydalanuvchi kelayotgan tomonga qaratish
             text.setAttribute('rotation', `0 ${isLeftCorridor ? 90 : -90} 0`);
 
-            destGroup.appendChild(downArrow);
+            destGroup.appendChild(cone);
             destGroup.appendChild(text);
             arWorld.appendChild(destGroup);
         }
-        // 5. NAVIGATSIYA LOGIKASI
+
+        // 5. KUCHAYTIRILGAN NAVIGATSIYA LOGIKASI (Drift Detection)
         AFRAME.registerComponent('nav-logic', {
             tick: function () {
                 if (!isNavigating || !targetData) return;
 
                 const camPos = this.el.camera.el.object3D.position;
-                const targetX = targetData.x * (targetData.corridor === 'left' ? -1 : 1);
-                const currentDist = Math.abs(targetX - camPos.x);
 
-                distVal.innerText = currentDist.toFixed(1);
+                // Target X coordinate
+                const isLeftCorridor = (targetData.corridor === 'left' || targetData.corridorDir === 'left');
+                const targetX = targetData.x * (isLeftCorridor ? -1 : 1);
 
-                // Startdan uzoqlashganda hint o'zgaradi
-                if (Math.abs(camPos.x) > 1.5 && currentDist > 2.0) {
-                    navHintText.innerText = "To'g'riga yuring ⬆️";
-                    navHintText.style.color = "#fff";
+                // Masofa (faqat X o'qi bo'yicha)
+                const distRemaining = Math.abs(targetX - camPos.x);
+                distVal.innerText = distRemaining.toFixed(1);
+
+                // --- YANGI LOGIKA: YONGA OG'ISH (Z-Drift) ---
+                // Agar foydalanuvchi koridor markazidan 1.5 metrdan ko'p chiqib ketsa
+                if (Math.abs(camPos.z) > 1.5) {
+                    navHintText.innerHTML = "⚠️ MARKAZGA QAYTING!<br><small>Devorga juda yaqinsiz</small>";
+                    navHintText.style.color = "#ff4444";
+                    navHintBox.style.borderColor = "#ff4444";
                 }
+                // Normal holat
+                else {
+                    navHintBox.style.borderColor = "rgba(255, 255, 255, 0.1)";
 
-                // Yetib kelganda
-                if (currentDist < 1.5) {
-                    navHintText.innerHTML = `🏁 YETIB KELDINGIZ! <br> <button onclick="resetApp()" style="margin-top:10px; padding:5px 15px; border-radius:10px; border:none; background:#00ff00; font-weight:bold;">Tugatish</button>`;
-                    navHintText.style.color = "#00ff00";
+                    // Start zonasidan chiqqanda
+                    if (distRemaining > 2.0) {
+                        navHintText.innerText = "To'g'riga yuring ⬆️";
+                        navHintText.style.color = "#fff";
+                    }
 
-                    // X tugmasini yashiramiz (chunki tugatish chiqdi)
-                    btnClose.style.display = 'none';
+                    // Yetib kelganda
+                    if (distRemaining < 1.0) {
+                        navHintText.innerHTML = `🏁 YETIB KELDINGIZ! <br> <button onclick="resetApp()" style="margin-top:5px; padding:5px 15px; background:#00ff00; border:none; border-radius:8px;">OK</button>`;
+                        navHintText.style.color = "#00ff00";
+                        btnClose.style.display = 'none';
+                    }
                 }
             }
         });
 
         document.querySelector('a-scene').setAttribute('nav-logic', '');
 
-        // 6. RESET (Menyuga qaytish)
+        // 6. RESET
         window.resetApp = function () {
             isNavigating = false;
             targetData = null;
-
-            arWorld.innerHTML = ''; // Sahnani tozalash
-
-            // UI ni qaytarish
+            arWorld.innerHTML = '';
             hud.style.display = 'none';
             navHintBox.style.display = 'none';
             btnClose.style.display = 'none';
-
             roomList.style.display = 'block';
-        }
 
+            // Devor ogohlantirishini tozalash
+            navHintBox.style.borderColor = "rgba(255, 255, 255, 0.1)";
+        }
     </script>
 </body>
 
