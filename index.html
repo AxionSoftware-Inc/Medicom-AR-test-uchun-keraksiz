@@ -3,46 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yo'naltirilmoqda...</title>
+    <title>Yuklanmoqda...</title>
     <style>
-        body { background: #000; color: #00d2ff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; text-align: center; }
+        body { background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
         .loader { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00d2ff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #status { color: #888; font-size: 0.9rem; }
     </style>
 </head>
 <body>
     <div class="loader"></div>
-    <div id="status">Tizim tekshirilmoqda...</div>
+    <div id="status">Tizim aniqlanmoqda...</div>
 
     <script>
-        // 1. URL parametrlarini saqlab qolamiz (?floor=2)
         const params = window.location.search;
+        const statusDiv = document.getElementById('status');
 
-        function go(mode) {
-            document.getElementById('status').innerText = (mode === 'ar' ? "6DoF" : "Lite") + " rejimiga o'tilmoqda...";
-            // 500ms ushlab turamiz, foydalanuvchi nimadir bo'layotganini ko'rsin
+        function redirect(mode) {
+            statusDiv.innerText = (mode === 'ar' ? "Pro" : "Lite") + " versiya yuklanmoqda...";
             setTimeout(() => {
                 window.location.replace(mode + "/index.html" + params);
-            }, 500);
+            }, 100);
         }
 
         async function checkSystem() {
-            // WebXR bormi?
+            // 1. IPHONE / IPAD TEKSHIRUVI (Eng muhimi shu)
+            // iPhone WebXR da qiynaladi, shuning uchun uni darrov Lite ga olamiz.
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (isIOS) {
+                redirect('lite');
+                return;
+            }
+
+            // 2. ANDROID VA BOSHQALAR
             if ('xr' in navigator) {
                 try {
-                    // AR (Immersive) rejimi bormi?
-                    const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
-                    if (isARSupported) {
-                        go('ar'); // 6DoF
+                    const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
+                    if (isSupported) {
+                        redirect('ar');
                     } else {
-                        go('lite'); // 3DoF
+                        redirect('lite');
                     }
                 } catch (e) {
-                    console.error(e);
-                    go('lite'); // Xatolik bo'lsa Lite ga
+                    redirect('lite');
                 }
             } else {
-                go('lite'); // WebXR umuman yo'q (eski iOS/Android)
+                redirect('lite');
             }
         }
 
