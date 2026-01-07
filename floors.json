@@ -35,6 +35,7 @@
     { "id": "204", "x": 13, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "205", "x": 16, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "206", "x": 20, "side": "left", "width": 1.8, "corridorDir": "left" },
+    { "id": "Konferensiya zali", "x": 10, "side": "right", "width": 1.8, "corridorDir": "left" },
     { "id": "207", "x": 10, "side": "right", "width": 1.5, "corridorDir": "left" },
     { "id": "208", "x": 2, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "209", "x": 2, "side": "left", "width": 1.8, "corridorDir": "right" },
@@ -53,6 +54,7 @@
     { "id": "304", "x": 15, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "305", "x": 17, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "306", "x": 20, "side": "left", "width": 1.8, "corridorDir": "left" },
+    { "id": "Ovqatlanish zali", "x": 10, "side": "right", "width": 1.8, "corridorDir": "left" },
 
     { "id": "307", "x": 2, "side": "left", "width": 1.5, "corridorDir": "right" },
     { "id": "308", "x": 2, "side": "right", "width": 1.5, "corridorDir": "right" },
@@ -69,10 +71,10 @@
     { "id": "Xojatxona", "x": 25, "side": "right", "width": 1.8, "corridorDir": "right" }
   ],
   "4": [
-    { "id": "401", "x": 4, "side": "left", "width": 1.5, "corridorDir": "left" },
+    { "id": "401", "x": 5, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "402", "x": 8, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "403", "x": 11, "side": "left", "width": 1.8, "corridorDir": "left" },
-    { "id": "404", "x": 13, "side": "left", "width": 1.5, "corridorDir": "left" },
+    { "id": "404", "x": 14, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "405", "x": 17, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "406", "x": 20, "side": "left", "width": 1.8, "corridorDir": "left" },
 
@@ -82,12 +84,12 @@
     { "id": "410", "x": 10, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "411", "x": 15, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "412", "x": 15, "side": "right", "width": 1.5, "corridorDir": "right" },
-    { "id": "413", "x": 18, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "414", "x": 18, "side": "right", "width": 1.5, "corridorDir": "right" },
-    { "id": "415", "x": 23, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "416", "x": 23, "side": "right", "width": 1.5, "corridorDir": "right" },
-    { "id": "417", "x": 25, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "418", "x": 30, "side": "left", "width": 1.5, "corridorDir": "right" },
-    { "id": "Xojatxona", "x": 25, "side": "right", "width": 1.8, "corridorDir": "right" }
+    { "id": "413", "x": 17, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "414", "x": 17, "side": "right", "width": 1.5, "corridorDir": "right" },
+    { "id": "415", "x": 21, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "416", "x": 22, "side": "right", "width": 1.5, "corridorDir": "right" },
+    { "id": "417", "x": 24, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "418", "x": 28, "side": "left", "width": 1.5, "corridorDir": "right" },
+    { "id": "Xojatxona", "x": 23, "side": "right", "width": 1.8, "corridorDir": "right" }
   ]
 }
