@@ -184,6 +184,19 @@
     <div id="ui-container">
         <button id="btn-reset" onclick="resetApp()">✕</button>
 
+        <div id="no-sensor-modal"
+            style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:99999; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px; color:white;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
+            <h2 style="color: #ff4444; margin: 0 0 10px 0;">Diqqat!</h2>
+            <p style="font-size: 1.1rem; line-height: 1.5; max-width: 300px;">
+                Sizning telefoningizda <b>Giroskop (Gyroscope)</b> datchigi yo'q yoki u ishlamayapti.
+            </p>
+            <p style="color: #aaa; font-size: 0.9rem;">Navigatsiya ishlashi uchun datchik zarur.</p>
+            <button onclick="location.reload()"
+                style="margin-top: 20px; padding: 10px 20px; background: #333; border: 1px solid white; color: white; border-radius: 8px;">Qayta
+                urinish</button>
+        </div>
+
         <div id="start-screen">
             <h1 style="margin:0; font-size:1.4rem;">Lite Rejim</h1>
             <p style="color:#aaa; font-size:0.9rem; margin:5px 0;">iPhone va oddiy telefonlar uchun</p>
@@ -250,18 +263,18 @@
             .catch(err => console.error("JSON Error:", err));
 
         function calibrateCamera() {
-    const cam = document.getElementById('cam');
-    const rig = document.getElementById('cameraRig');
-    
-    // 1. Hozirgi kameraning burilish burchagini olamiz (faqat Y o'qi bo'yicha)
-    const currentRotation = cam.getAttribute('rotation');
-    
-    // 2. Rigni teskari tomonga buramiz. 
-    // Masalan, camera 30 gradus o'ngda bo'lsa, Rigni -30 ga burasak, natija 0 (to'g'ri) bo'ladi.
-    rig.setAttribute('rotation', `0 ${-currentRotation.y} 0`);
-    
-    console.log("Kalibrovka qilindi. Offset:", -currentRotation.y);
-}
+            const cam = document.getElementById('cam');
+            const rig = document.getElementById('cameraRig');
+
+            // 1. Hozirgi kameraning burilish burchagini olamiz (faqat Y o'qi bo'yicha)
+            const currentRotation = cam.getAttribute('rotation');
+
+            // 2. Rigni teskari tomonga buramiz. 
+            // Masalan, camera 30 gradus o'ngda bo'lsa, Rigni -30 ga burasak, natija 0 (to'g'ri) bo'ladi.
+            rig.setAttribute('rotation', `0 ${-currentRotation.y} 0`);
+
+            console.log("Kalibrovka qilindi. Offset:", -currentRotation.y);
+        }
 
         function renderRooms(rooms) {
             roomList.innerHTML = '';
@@ -335,10 +348,88 @@
         // 4. NAVIGATSIYA LOGIKASI (3DoF - aniqlashtirilgan)
         // --- 1. KALIBROVKA FUNKSIYASI (Yangi) ---
         // Bu funksiya telefon qayerga qarab turgan bo'lsa, o'sha joyni "To'g'ri (0)" deb belgilaydi.
+
+        // --- YANGI: Datchik ma'lumotini tekshirish funksiyasi ---
+        function checkSensorData() {
+            return new Promise((resolve, reject) => {
+                let sensorWorking = false;
+
+                // Bir martalik tekshiruv funksiyasi
+                const tester = (e) => {
+                    // Agar alpha, beta yoki gamma dan birortasi son bo'lsa, demak datchik ishlayapti
+                    if (e.alpha !== null || e.beta !== null || e.gamma !== null) {
+                        sensorWorking = true;
+                    }
+                };
+
+                // Tinglashni boshlaymiz
+                window.addEventListener('deviceorientation', tester);
+
+                // 500 millisekund (yarim soniya) kutamiz
+                setTimeout(() => {
+                    window.removeEventListener('deviceorientation', tester);
+
+                    if (sensorWorking) {
+                        resolve(); // Ishlayapti
+                    } else {
+                        reject(); // Ishlamayapti
+                    }
+                }, 500);
+            });
+        }
+
+        // --- YANGILANGAN: Start Tugmasi Logikasi ---
+        startBtn.onclick = function () {
+            startBtn.disabled = true;
+            startBtn.innerText = "Tekshirilmoqda...";
+
+            // Previewni to'xtatamiz
+            if (previewStream) {
+                previewStream.getTracks().forEach(track => track.stop());
+                previewVideo.srcObject = null;
+            }
+
+            // 1. iOS uchun Ruxsat
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            // Ruxsat berildi, endi datchik ishlayaptimi tekshiramiz
+                            runSensorCheck();
+                        } else {
+                            alert("Datchiklarga ruxsat berilmadi! Dastur ishlay olmaydi.");
+                            startBtn.disabled = false;
+                            startBtn.innerText = "BOSHLASH";
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert("Xatolik yuz berdi");
+                    });
+            } else {
+                // 2. Android uchun to'g'ridan-to'g'ri tekshiruv
+                runSensorCheck();
+            }
+        };
+
+        // Asosiy ishga tushirish jarayoni
+        function runSensorCheck() {
+            checkSensorData()
+                .then(() => {
+                    // Hammasi joyida
+                    initMainCamera();
+                })
+                .catch(() => {
+                    // Datchik yo'q!
+                    document.getElementById('no-sensor-modal').style.display = 'flex';
+                    startBtn.innerText = "XATOLIK";
+                });
+        }
+
         function calibrateCamera() {
             const cam = document.getElementById('cam');
             const rig = document.getElementById('cameraRig');
-            
+
             if (!cam || !rig) return;
 
             // Kameraning hozirgi burilish burchagini olamiz (Y o'qi)
@@ -349,7 +440,7 @@
             // Masalan: Agar telefon 30 gradus o'ngga qaragan bo'lsa, dunyoni -30 ga buramiz.
             // Shunda foydalanuvchi to'g'riga qaragan hisoblanadi.
             rig.setAttribute('rotation', `0 ${-y} 0`);
-            
+
             console.log("Kalibrovka qilindi. Offset:", -y);
         }
 
@@ -362,7 +453,7 @@
             worldRoot.innerHTML = '';
 
             // --- MUHIM: Navigatsiya boshlanishida kalibrovka qilamiz ---
-            calibrateCamera(); 
+            calibrateCamera();
             // -----------------------------------------------------------
 
             const isLeft = (room.corridor === 'left' || room.corridorDir === 'left');
