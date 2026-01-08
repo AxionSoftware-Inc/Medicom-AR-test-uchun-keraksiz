@@ -216,7 +216,8 @@
     <div id="nav-hint-box"><span id="nav-hint-text" style="font-weight: bold;"></span></div>
 
     <a-scene webxr="requiredFeatures: local-floor, dom-overlay; overlayElement: #ui-container"
-        renderer="antialias: true; colorManagement: true;" vr-mode-ui="enabled: false">
+    renderer="antialias: true; colorManagement: true;" vr-mode-ui="enabled: false"
+    fps-check>
         
         <a-camera id="cam" position="0 1.6 0"></a-camera>
         <a-entity id="ar-world" position="0 0 0"></a-entity>
@@ -438,23 +439,43 @@
 }
 
         // 6. NAVIGATSIYA LOOP
-        AFRAME.registerComponent('nav-logic', {
-            tick: function () {
-                if (!isNavigating || !targetData) return;
-                
-                const camPos = this.el.camera.el.object3D.position;
-                const isLeft = (targetData.corridor === 'left' || targetData.corridorDir === 'left');
-                const targetX = targetData.x * (isLeft ? -1 : 1);
-                
-                // Masofa hisoblash
-                const distRem = Math.abs(targetX - camPos.x);
-                distVal.innerText = distRem.toFixed(1);
+        AFRAME.registerComponent('fps-check', {
+            init: function () {
+                this.frames = 0;
+                this.prevTime = Date.now();
+                this.lowFpsCount = 0; 
+                this.startTime = Date.now();
+                this.checkInterval = 1000; // Har 1 soniyada
+            },
 
-                // Yetib kelganda
-                if (distRem < 1.0) {
-                    navHintText.innerHTML = `🏁 YETIB KELDINGIZ! <br> <button onclick="resetApp()" style="margin-top:10px; padding:8px 20px; background:#00ff00; border:none; border-radius:10px; font-weight:bold;">Tugatish</button>`;
-                    navHintText.style.color = "#00ff00";
-                    btnClose.style.display = 'none';
+            tick: function () {
+                this.frames++;
+                const time = Date.now();
+
+                // Dastlabki 8 soniya TEKSHIRMAYMIZ (Yuklanish og'ir bo'ladi)
+                if (time - this.startTime < 8000) return;
+
+                if (time >= this.prevTime + this.checkInterval) {
+                    const fps = Math.round((this.frames * 1000) / (time - this.prevTime));
+                    
+                    // Agar FPS 15 dan tushib ketsa (juda qotsa)
+                    if (fps < 15) {
+                        this.lowFpsCount++;
+                    } else {
+                        this.lowFpsCount = 0; 
+                    }
+
+                    // Ketma-ket 3 soniya davomida qotsa -> LITE ga o'tish
+                    if (this.lowFpsCount >= 3) {
+                        this.el.pause(); // Sahnani to'xtatamiz
+                        alert("Telefoningiz AR rejimida qiynalyapti. Yengil (Lite) rejimga o'tamiz.");
+                        
+                        // Parametrlarni saqlagan holda Lite ga otamiz
+                        window.location.replace('../lite/index.html' + window.location.search);
+                    }
+
+                    this.prevTime = time;
+                    this.frames = 0;
                 }
             }
         });
