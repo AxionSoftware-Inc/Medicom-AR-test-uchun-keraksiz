@@ -52,7 +52,7 @@
   ],
   "3": [
     { "id": "301", "x": 4.5, "side": "left", "width": 1.5, "corridorDir": "left" },
-    { "id": "302", "x": 9.5, "side": "left", "width": 1.5, "corridorDir": "left" },
+    { "id": "302", "x": 9, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "303", "x": 12, "side": "left", "width": 1.8, "corridorDir": "left" },
     { "id": "304", "x": 15, "side": "left", "width": 1.5, "corridorDir": "left" },
     { "id": "305", "x": 17, "side": "left", "width": 1.5, "corridorDir": "left" },
@@ -67,12 +67,12 @@
     { "id": "312", "x": 14, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "313", "x": 16, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "314", "x": 16, "side": "right", "width": 1.5, "corridorDir": "right" },
-    { "id": "315", "x": 21.5, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "316", "x": 21.5, "side": "right", "width": 1.5, "corridorDir": "right" },
+    { "id": "315", "x": 21, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "316", "x": 21, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "317", "x": 22, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "318", "x": 27.5, "side": "left", "width": 1.5, "corridorDir": "right" },
-    { "id": "Erkaklar hojatxonasi", "x": 24, "side": "right", "width": 1.8, "corridorDir": "right" },
-    { "id": "Ayollar hojatxonasi", "x": 26, "side": "right", "width": 1.8, "corridorDir": "right" }
+    { "id": "Erkaklar hojatxonasi", "x": 23, "side": "right", "width": 1.8, "corridorDir": "right" },
+    { "id": "Ayollar hojatxonasi", "x": 25, "side": "right", "width": 1.8, "corridorDir": "right" }
   ],
   "4": [
     { "id": "401", "x": 4.5, "side": "left", "width": 1.5, "corridorDir": "left" },
@@ -84,8 +84,8 @@
 
     { "id": "407", "x": 2, "side": "left", "width": 1.5, "corridorDir": "right" },
     { "id": "408", "x": 2, "side": "right", "width": 1.5, "corridorDir": "right" },
-    { "id": "409", "x": 9.5, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "410", "x": 9.5, "side": "right", "width": 1.5, "corridorDir": "right" },
+    { "id": "409", "x": 9, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "410", "x": 9, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "411", "x": 14.5, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "412", "x": 14.5, "side": "right", "width": 1.5, "corridorDir": "right" },
     { "id": "413", "x": 16, "side": "left", "width": 1.8, "corridorDir": "right" },
