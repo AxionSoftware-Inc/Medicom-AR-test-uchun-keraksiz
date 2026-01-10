@@ -15,7 +15,7 @@
     { "id": "113", "x": 14, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "114", "x": 16, "side": "right", "width": 1.8, "corridorDir": "right" },
     { "id": "115", "x": 16, "side": "left", "width": 1.8, "corridorDir": "right" },
-    { "id": "116", "x": 21.5, "side": "left", "width": 1.8, "corridorDir": "right" },
+    { "id": "116", "x": 21, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "117", "x": 23, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "118", "x": 27, "side": "left", "width": 1.8, "corridorDir": "right" },
     { "id": "119", "x": 25, "side": "left", "width": 1.8, "corridorDir": "left" },
@@ -24,7 +24,7 @@
     { "id": "122", "x": 34, "side": "left", "width": 1.8, "corridorDir": "left" },
     { "id": "123", "x": 36, "side": "left", "width": 1.8, "corridorDir": "left" },
     { "id": "124", "x": 34, "side": "right", "width": 1.8, "corridorDir": "left" },
-    { "id": "125", "x": 32, "side": "right", "width": 1.8, "corridorDir": "left" },
+    { "id": "125", "x": 31, "side": "right", "width": 1.8, "corridorDir": "left" },
     { "id": "126", "x": 28, "side": "right", "width": 1.8, "corridorDir": "left" },
     { "id": "Erkaklar hojatxonasi", "x": 24, "side": "right", "width": 1.8, "corridorDir": "right" },
     { "id": "Ayollar hojatxonasi", "x": 25, "side": "right", "width": 1.8, "corridorDir": "right" }
